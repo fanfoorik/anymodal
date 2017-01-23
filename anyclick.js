@@ -6,20 +6,22 @@
             event:false,
             init:function( options ) {
 
+                var defaults = $.extend({
+                    target: null,
+                    action: "toggle",
+                    triggerActive: "active",
+                    targetActive: "active",
+                    escButton: 1,
+                    outerClick: 1,
+                    beforeBind: function(){},
+                    beforeUnbind: function(){},
+                    afterBind: function(){},
+                    afterUnbind: function(){}
+                }, options);
+
                 return this.each(function(){
-
                     if( !$(this).data('anymodal') ) {
-
-                        $(this).data('anymodal', $.extend({
-                            target: null,
-                            type: "toggle", //"add", "remove",
-                            triggerActive: "active",
-                            targetActive: "active",
-                            escButton: 1,
-                            outerClick: 1
-                        }, options)).on("click", function(ev){
-                            methods[$(this).data("anymodal").type](ev);
-                        });
+                        $(this).data('anymodal', true).on("click", defaults, methods[defaults.action]);
                     }
                 });
             },
@@ -29,15 +31,18 @@
 
                 if(!methods.event){
 
-                    var $this,data;
-
                     methods.event = ev;
+                    
+                    var $this = $(ev.target),
+                        data = ev.data,
+                        targetNode = data.target === "object" ? data.target : $(data.target);
 
-                    $this = $(methods.event.target);
-                    data = $this.data("anymodal");
+                    data.beforeBind($this, targetNode);
 
-                    $this.addClass(data.triggerActive).trigger("bind.anymodal");
-                    $(data.target).addClass(data.targetActive);
+                    $this.addClass(data.triggerActive);
+                    targetNode.addClass(data.targetActive);
+
+                    data.afterBind($this, targetNode);
 
                     if(data.outerClick){
                         $("body").on("click.anymodal", methods.onDomClick);
@@ -45,6 +50,7 @@
                     if(data.escButton){
                         $("body").on("keyup.anymodal", methods.onEscape);
                     }
+
                 }
                 else if( !$(methods.event.target).is($(ev.target)) ){
                     methods.unbind();
@@ -56,14 +62,19 @@
             },
 
             unbind: function(){
-
                 if(methods.event){
 
                     var $this = $(methods.event.target),
-                        data = $this.data("anymodal");
+                        data = methods.event.data,
+                        targetNode = data.target === "object" ? data.target : $(data.target);
 
-                    $this.removeClass(data.triggerActive).trigger("unbind.anymodal");
-                    $(data.target).removeClass(data.targetActive);
+                    data.beforeUnbind($this, targetNode);
+
+                    $this.removeClass(data.triggerActive);
+                    targetNode.removeClass(data.targetActive);
+
+                    data.afterUnbind($this, targetNode);
+
                     methods.event = false;
 
                     $("body").off(".anymodal");
@@ -84,11 +95,12 @@
                 }
             },
 
-            onDomClick: function(event){
+            onDomClick: function(ev){
 
-                var data = $(methods.event.target).data("anymodal");
+                var data = methods.event.data,
+                    targetNode = data.target === "object" ? data.target : $(data.target);
 
-                if( !$(event.target).is( $(data.target) ) && !$(event.target).is($(data.target).find("*")) ){
+                if( !$(ev.target).is( targetNode ) && !$(ev.target).is( targetNode.find("*") ) ){
                     methods.unbind();
                 }
             },
@@ -101,7 +113,7 @@
         };
 
         $.fn.anymodal = function( method ) {
-            
+
             if ( methods[method] ) {
                 return methods[method].apply( this, Array.prototype.slice.call( arguments, 1 ));
             } else if ( typeof method === 'object' || ! method ) {
