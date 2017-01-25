@@ -21,7 +21,7 @@
 
                 return this.each(function(){
                     if( !$(this).data('anymodal') ) {
-                        $(this).data('anymodal', true).on("click", defaults, methods[defaults.action]);
+                        $(this).data('anymodal', defaults).on("click", methods[defaults.action]);
                     }
                 });
             },
@@ -34,8 +34,8 @@
                     methods.event = ev;
                     
                     var $this = $(ev.target),
-                        data = ev.data,
-                        targetNode = data.target === "object" ? data.target : $(data.target);
+                        data = $this.data("anymodal"),
+                        targetNode = typeof data.target === "object" ? data.target : $(data.target);
 
                     data.beforeBind($this, targetNode);
 
@@ -50,7 +50,6 @@
                     if(data.escButton){
                         $("body").on("keyup.anymodal", methods.onEscape);
                     }
-
                 }
                 else if( !$(methods.event.target).is($(ev.target)) ){
                     methods.unbind();
@@ -65,8 +64,8 @@
                 if(methods.event){
 
                     var $this = $(methods.event.target),
-                        data = methods.event.data,
-                        targetNode = data.target === "object" ? data.target : $(data.target);
+                        data = $this.data("anymodal"),
+                        targetNode = typeof data.target === "object" ? data.target : $(data.target);
 
                     data.beforeUnbind($this, targetNode);
 
@@ -96,17 +95,17 @@
             },
 
             onDomClick: function(ev){
-
-                var data = methods.event.data,
-                    targetNode = data.target === "object" ? data.target : $(data.target);
+                
+                var data = $(methods.event.target).data("anymodal"),
+                    targetNode = typeof data.target === "object" ? data.target : $(data.target);
 
                 if( !$(ev.target).is( targetNode ) && !$(ev.target).is( targetNode.find("*") ) ){
                     methods.unbind();
                 }
             },
 
-            onEscape: function(){
-                if(event.which === 27){
+            onEscape: function(ev){
+                if(ev.which === 27){
                     methods.unbind();
                 }
             }
